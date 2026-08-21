@@ -1,8 +1,8 @@
 """Trading bot entrypoint.
 
 Runs a poll loop: for each watched stock, fetch a quote, ask the strategy for
-a decision, and act on it. Ships with DoNothingStrategy so the loop is safe
-to run as-is -- swap in a real Strategy once one exists.
+a decision, and act on it. Ships with MovingAverageCrossStrategy (골든크로스/
+데드크로스) as a basic default -- swap in another Strategy as needed.
 """
 
 import logging
@@ -10,7 +10,8 @@ import time
 
 from bot.config import load_config
 from bot.kis_client import KISClient
-from bot.strategies.base import DoNothingStrategy, Signal, Strategy
+from bot.strategies.base import Signal, Strategy
+from bot.strategies.moving_average import MovingAverageCrossStrategy
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,4 +57,4 @@ def run(strategy: Strategy, watchlist: list[str] = WATCHLIST) -> None:
 
 
 if __name__ == "__main__":
-    run(strategy=DoNothingStrategy())
+    run(strategy=MovingAverageCrossStrategy())
