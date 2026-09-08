@@ -4,16 +4,16 @@
 
 ## 1. KIS API 키 발급
 
-- [ ] 한국투자증권 계좌 준비 (없으면 개설)
-- [ ] [KIS Developers 포털](https://apiportal.koreainvestment.com) 가입
-- [ ] **모의투자용** APP KEY / APP SECRET 발급 (처음엔 이것만 있으면 됨)
-- [ ] 실전투자용 APP KEY / APP SECRET은 나중에 (5번 단계에서) 발급
+- [X] 한국투자증권 계좌 준비 (없으면 개설)
+- [X] [KIS Developers 포털](https://apiportal.koreainvestment.com) 가입
+- [X] **모의투자용** APP KEY / APP SECRET 발급 (처음엔 이것만 있으면 됨)
+- [X] 실전투자용 APP KEY / APP SECRET은 나중에 (5번 단계에서) 발급
 
 ## 2. 설정 파일 만들기
 
-- [ ] 프로젝트 루트에서 `.env.example`을 복사해 `.env` 파일 생성
-- [ ] `.env`에 `KIS_APP_KEY`, `KIS_APP_SECRET`, `KIS_ACCOUNT_NO`, `KIS_ACCOUNT_PRODUCT_CD` 입력
-- [ ] `TRADING_MODE=paper`로 되어 있는지 확인 (모의투자, 실제 돈 안 나감)
+- [X] 프로젝트 루트에서 `.env.example`을 복사해 `.env` 파일 생성
+- [X] `.env`에 `KIS_APP_KEY`, `KIS_APP_SECRET`, `KIS_ACCOUNT_NO`, `KIS_ACCOUNT_PRODUCT_CD` 입력
+- [X] `TRADING_MODE=paper`로 되어 있는지 확인 (모의투자, 실제 돈 안 나감)
 
 ## 3. 로컬에서 실행해보기
 

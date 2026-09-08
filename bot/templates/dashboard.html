@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moa Money</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+  <header class="topbar"><div><strong>Moa Money</strong><span class="badge">PAPER</span></div><span id="runState" class="status">중지됨</span></header>
+  <main>
+    <section class="summary" aria-label="자동매매 현황">
+      <div><span>감시 종목</span><strong id="watchCount">-</strong></div>
+      <div><span>현재가</span><strong id="priceSummary">-</strong></div>
+      <div><span>보유 수량</span><strong id="positionSummary">-</strong></div>
+    </section>
+    <section class="layout">
+      <form id="settingsForm" class="panel">
+        <h1>자동매매 설정</h1>
+        <label>감시 종목<input id="watchlist" name="watchlist" inputmode="numeric" placeholder="005930"></label>
+        <label>1회 매수 한도 (원)<input id="orderBudget" name="order_budget" type="number" min="1000" step="1000"></label>
+        <div class="pair"><label>단기 이동평균<input id="shortWindow" name="short_window" type="number" min="1"></label><label>장기 이동평균<input id="longWindow" name="long_window" type="number" min="2"></label></div>
+        <label>조회 주기 (초)<input id="pollInterval" name="poll_interval_seconds" type="number" min="5"></label>
+        <p id="formError" class="error" role="alert"></p>
+        <div class="actions"><button type="submit" class="secondary">설정 저장</button><button id="startButton" type="button" class="primary">시작</button><button id="stopButton" type="button" class="danger">중지</button></div>
+      </form>
+      <section class="panel log-panel"><h2>실행 기록</h2><div id="events" class="events"></div></section>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

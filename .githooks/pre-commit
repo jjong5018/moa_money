@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -eu
+
+blocked_files='(^|/)(\.env([^.]|$)|\.token_cache\.json|dashboard_settings\.json)$'
+secret_pattern='KIS_(APP_KEY|APP_SECRET|REAL_APP_KEY|REAL_APP_SECRET)[[:space:]]*=[[:space:]]*[^[:space:]#]|access_token[[:space:]]*[:=][[:space:]]*"[^" ]{8,}"|BEGIN [A-Z ]*PRIVATE KEY'
+
+git diff --cached --name-only --diff-filter=ACMR | while IFS= read -r file; do
+    if printf '%s\n' "$file" | grep -Eq "$blocked_files"; then
+        printf '%s\n' "Commit blocked: $file is a local secret or runtime file."
+        exit 1
+    fi
+
+    if git diff --cached -- "$file" | grep -Eq "$secret_pattern"; then
+        printf '%s\n' "Commit blocked: a secret-like value was detected in $file."
+        exit 1
+    fi
+done

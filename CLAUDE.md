@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 이 프로젝트는
 
 한국투자증권(KIS) Open API를 이용한 파이썬 자동매매 봇입니다. 감시 종목(watchlist)의 시세를
-주기적으로 조회하고, 교체 가능한 `Strategy`에게 매수/매도/보유 판단을 물어본 뒤, KIS를 통해 주문을
+주기적으로 조회하고, 교체 가능한 `Strategy`에게 매수/매도/보유 판단을 물어본 뒤, KIS를 통해 주2문을
 넣습니다. 모의투자(paper)와 실전투자(real) 모두 동일한 코드 경로로 동작하며, 환경변수 하나로
 전환됩니다.
 
@@ -43,8 +43,7 @@ lint/format 도구는 아직 설정되어 있지 않습니다.
 값을 골라 씁니다. KIS 응답은 HTTP 에러와 별개로 `rt_cd != "0"`로 API 레벨 에러를 표시하는데, 모든
 메서드가 이를 확인해 `RuntimeError`로 다시 던집니다.
 
-**`bot/strategies/base.py`** — `Strategy` 인터페이스입니다. `decide(stock_code, quote, position) ->
-Decision`이 매 폴링 틱마다 감시 종목별로 한 번씩 호출됩니다. `quote`는 KIS 시세 응답 원본(가격은
+**`bot/strategies/base.py`** — `Strategy` 인터페이스입니다. `decide(stock_code, quote, position) -> Decision`이 매 폴링 틱마다 감시 종목별로 한 번씩 호출됩니다. `quote`는 KIS 시세 응답 원본(가격은
 `quote["stck_prpr"]`에 있음)이고, `position`은 잔고 조회 결과에서 매칭되는 항목이거나 보유하고
 있지 않으면 `None`입니다(수량은 `position["hldg_qty"]`). 새 전략을 만들 때는 이 인터페이스를
 구현하면 됩니다.

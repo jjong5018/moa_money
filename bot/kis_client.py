@@ -21,6 +21,7 @@ from bot.config import Config
 logger = logging.getLogger(__name__)
 
 TOKEN_CACHE_PATH = Path(__file__).resolve().parent.parent / ".token_cache.json"
+REQUEST_INTERVAL_SECONDS = 1.2
 
 OrderSide = Literal["buy", "sell"]
 
@@ -31,6 +32,7 @@ class KISClient:
         self._session = requests.Session()
         self._access_token: str | None = None
         self._token_expires_at: float = 0.0
+        self._last_request_at: float = 0.0
         self._load_cached_token()
 
     # -- auth -----------------------------------------------------------
@@ -63,6 +65,7 @@ class KISClient:
         if self._access_token and time.time() < self._token_expires_at - 60:
             return self._access_token
 
+        self._wait_for_request_slot()
         resp = self._session.post(
             f"{self.config.base_url}/oauth2/tokenP",
             json={
@@ -80,6 +83,12 @@ class KISClient:
         logger.info("Issued new KIS access token, expires in %ss", data["expires_in"])
         return self._access_token
 
+    def _wait_for_request_slot(self) -> None:
+        elapsed = time.monotonic() - self._last_request_at
+        if elapsed < REQUEST_INTERVAL_SECONDS:
+            time.sleep(REQUEST_INTERVAL_SECONDS - elapsed)
+        self._last_request_at = time.monotonic()
+
     def _headers(self, tr_id: str) -> dict:
         return {
             "content-type": "application/json; charset=utf-8",
@@ -87,16 +96,17 @@ class KISClient:
             "appkey": self.config.app_key,
             "appsecret": self.config.app_secret,
             "tr_id": tr_id,
-            "custtype": "P",
         }
 
     # -- market data ------------------------------------------------------
 
     def get_current_price(self, stock_code: str) -> dict:
         """stock_code: 6-digit KRX code, e.g. '005930' for 삼성전자."""
+        headers = self._headers("FHKST01010100")
+        self._wait_for_request_slot()
         resp = self._session.get(
             f"{self.config.base_url}/uapi/domestic-stock/v1/quotations/inquire-price",
-            headers=self._headers("FHKST01010100"),
+            headers=headers,
             params={
                 "FID_COND_MRKT_DIV_CODE": "J",
                 "FID_INPUT_ISCD": stock_code,
@@ -113,9 +123,11 @@ class KISClient:
 
     def get_balance(self) -> dict:
         tr_id = "VTTC8434R" if self.config.is_paper else "TTTC8434R"
+        headers = self._headers(tr_id)
+        self._wait_for_request_slot()
         resp = self._session.get(
             f"{self.config.base_url}/uapi/domestic-stock/v1/trading/inquire-balance",
-            headers=self._headers(tr_id),
+            headers=headers,
             params={
                 "CANO": self.config.account_no,
                 "ACNT_PRDT_CD": self.config.account_product_cd,
@@ -153,9 +165,11 @@ class KISClient:
             tr_id = "VTTC0801U" if self.config.is_paper else "TTTC0801U"
 
         order_division = "01" if price == 0 else "00"  # 01=시장가, 00=지정가
+        headers = self._headers(tr_id)
+        self._wait_for_request_slot()
         resp = self._session.post(
             f"{self.config.base_url}/uapi/domestic-stock/v1/trading/order-cash",
-            headers=self._headers(tr_id),
+            headers=headers,
             json={
                 "CANO": self.config.account_no,
                 "ACNT_PRDT_CD": self.config.account_product_cd,
