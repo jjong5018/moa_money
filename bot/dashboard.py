@@ -14,7 +14,7 @@ from typing import Any
 from flask import Flask, jsonify, render_template, request
 
 from bot.config import Config, load_config
-from bot.kis_client import KISClient
+from bot.kis_client import KISClient, OrderStatusUnknownError
 from bot.strategies.base import Signal
 from bot.strategies.moving_average import MovingAverageCrossStrategy
 
@@ -151,14 +151,16 @@ class PaperTradingRunner:
                         if decision.signal == Signal.BUY:
                             quantity = min(self.settings.order_budget, cash) // price
                             if quantity > 0:
-                                client.place_order(stock_code, quantity, "buy")
+                                result = client.place_order(stock_code, quantity, "buy")
                                 cash -= quantity * price
-                                self._event("order", f"매수 주문: {stock_code} {quantity}주")
+                                verification = "상태 확인됨" if result["status_verified"] else "상태 확인 대기"
+                                self._event("order", f"매수 주문: {stock_code} {quantity}주 ({verification})")
                             else:
                                 self._event("warning", f"매수 보류: {stock_code} 주문 한도 또는 예수금 부족")
                         elif decision.signal == Signal.SELL:
-                            client.place_order(stock_code, decision.quantity, "sell")
-                            self._event("order", f"매도 주문: {stock_code} {decision.quantity}주")
+                            result = client.place_order(stock_code, decision.quantity, "sell")
+                            verification = "상태 확인됨" if result["status_verified"] else "상태 확인 대기"
+                            self._event("order", f"매도 주문: {stock_code} {decision.quantity}주 ({verification})")
 
                     with self._lock:
                         self._snapshot = {
@@ -168,6 +170,9 @@ class PaperTradingRunner:
                                 code: position.get("hldg_qty", "0") for code, position in positions.items()
                             },
                         }
+                except OrderStatusUnknownError as error:
+                    logger.error("Order status is unknown: %s", error)
+                    self._event("error", f"주문 상태 미확인: {error}")
                 except Exception as error:
                     logger.exception("Dashboard trading tick failed")
                     self._event("error", f"조회 실패: {error}")
