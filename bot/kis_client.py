@@ -12,17 +12,17 @@ import json
 import logging
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Literal
 from zoneinfo import ZoneInfo
 
 import requests
 
 from bot.config import Config
+from bot.storage import data_path
 
 logger = logging.getLogger(__name__)
 
-TOKEN_CACHE_PATH = Path(__file__).resolve().parent.parent / ".token_cache.json"
+TOKEN_CACHE_PATH = data_path(".token_cache.json")
 REQUEST_INTERVAL_SECONDS = 1.2
 REQUEST_TIMEOUT_SECONDS = 10
 MAX_QUERY_ATTEMPTS = 3

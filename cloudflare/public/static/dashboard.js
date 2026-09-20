@@ -8,8 +8,12 @@ async function api(path, options = {}) {
     headers: { ...options.headers, "X-Moa-Request": "dashboard" },
   });
   if (response.status === 401) {
-    window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+    window.location.reload();
     throw new Error("로그인이 필요합니다.");
+  }
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    window.location.reload();
+    throw new Error("로그인 세션을 확인하고 있습니다.");
   }
   const body = await response.json();
   if (!response.ok) throw new Error(body.error || "요청을 처리하지 못했습니다.");
@@ -111,13 +115,5 @@ $("#settingsForm").addEventListener("submit", async (event) => {
 
 $("#startButton").addEventListener("click", async () => { try { await api("/api/start", { method: "POST" }); await refresh(); } catch (error) { $("#formError").textContent = error.message; } });
 $("#stopButton").addEventListener("click", async () => { await api("/api/stop", { method: "POST" }); await refresh(); });
-const logoutButton = $("#logoutButton");
-if (logoutButton) {
-  logoutButton.addEventListener("click", async () => {
-    await api("/logout", { method: "POST" });
-    window.location.assign("/login");
-  });
-}
-
 refresh();
 setInterval(refresh, 3000);

@@ -7,7 +7,10 @@
 - KIS 모의투자 계좌 인증, 잔고 조회, 현재가 조회, 현금 주문
 - 단기·장기 이동평균 골든크로스 매수 및 데드크로스 매도 전략
 - 모의투자 전용 웹 대시보드
-- 감시 종목, 1회 매수 한도, 이동평균 기간, 조회 주기 설정
+- 로컬 운영용 로그인 화면과 12시간 로그인 세션
+- Cloudflare Access로 보호되는 Worker 배포
+- 감시 종목, 1회·일일 매수 한도, 일일 주문 횟수, 이동평균 기간, 조회 주기 설정
+- 대시보드 주문의 일일 매수 금액 및 주문 횟수 제한 (KST 자정에 초기화)
 - 실행 기록, 현재가, 보유 수량 확인
 
 ## 시작하기
@@ -29,7 +32,12 @@ KIS_APP_SECRET=
 KIS_ACCOUNT_NO=
 KIS_ACCOUNT_PRODUCT_CD=01
 TRADING_MODE=paper
+DASHBOARD_USERNAME=owner
+DASHBOARD_PASSWORD=16자_이상의_비밀번호
+DASHBOARD_SESSION_SECRET=32자_이상의_무작위_문자열
 ```
+
+`DASHBOARD_*` 값은 로컬에서는 선택 사항입니다. 세 값을 설정하면 로그인 화면이 활성화되며, 운영 환경에서는 모두 필수입니다. 세션 비밀값은 `python -c "import secrets; print(secrets.token_urlsafe(32))"`로 만들 수 있습니다.
 
 웹 대시보드를 실행합니다.
 
@@ -39,7 +47,20 @@ python -m bot.dashboard
 
 브라우저에서 `http://127.0.0.1:5000`을 열고 설정을 저장한 후 시작합니다. 이 대시보드는 실전투자 모드에서 실행을 차단합니다.
 
-## 테스트
+`일일 최대 매수 금액`은 매수 주문에만 적용되며, `일일 최대 주문 횟수`는 매수와 매도 모두에 적용됩니다. 주문 시도는 KIS 응답이 불확실해도 보수적으로 한도에 포함됩니다. 대시보드를 재시작해도 당일 집계는 유지됩니다.
+
+## Cloudflare 배포
+
+운영 환경은 Cloudflare Worker와 Durable Object를 사용합니다. Cloudflare에서는 자체 아이디·비밀번호 대신 허용된 이메일만 통과시키는 Cloudflare Access로 로그인합니다. KIS 비밀값 등록과 Access 설정은 [배포 안내](DEPLOYMENT.md)를 확인하세요.
+
+```bash
+npm install
+npm run test:cloudflare
+npm run typecheck
+npm run deploy
+```
+
+## 테스트 실행
 
 ```bash
 pytest tests/ -q
@@ -56,6 +77,8 @@ bot/
   static/               대시보드 CSS와 JavaScript
   templates/            대시보드 HTML
 tests/                  단위 테스트
+cloudflare/             Worker, Durable Object, 정적 배포 파일
+wrangler.jsonc          Cloudflare 리소스와 배포 설정
 ```
 
 ## 보안

@@ -6,5 +6,9 @@ __pycache__/
 *.pyc
 .token_cache.json
 dashboard_settings.json
+daily_order_usage.json
 instance/
 *.log
+node_modules/
+.wrangler/
+.dev.vars
