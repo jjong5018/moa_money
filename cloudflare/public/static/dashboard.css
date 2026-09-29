@@ -1,4 +1,24 @@
 :root { color: #edf1ff; background: #080b16; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 16px; }
+[hidden] { display: none !important; }
+.mode-selector { display: flex; gap: 8px; margin-top: 22px; }
+.mode-selector .button { flex: 1; }
+.mode-selector [aria-pressed="true"] { background: #5145ab; border-color: #a997ff; color: white; }
+.real-mode .mode-selector [aria-pressed="true"] { background: #703329; border-color: #ff9c85; }
+.real-mode #modeBadge, .real-mode .mode-pill { background: #48241e; color: #ffc2ac; border-color: #a2553e; }
+.mode-description { color: #aab5d0; font-size: .8rem; line-height: 1.6; }
+.watchlist-names { margin-top: 8px; color: #aab5d0; font-size: .75rem; line-height: 1.6; overflow-wrap: anywhere; }
+.watchlist-names { display: flex; flex-wrap: wrap; gap: 6px; }
+.watchlist-chip { display: inline-flex; align-items: center; gap: 7px; padding: 4px 6px 4px 9px; color: #d7def2; background: #232c47; border: 1px solid #394665; border-radius: 7px; }
+.watchlist-chip button { padding: 0 3px; color: #aeb9d7; background: none; border: 0; font-size: 1rem; line-height: 1; }
+.watchlist-chip button:hover { color: #fff; }
+.watchlist-chip button:disabled { cursor: not-allowed; opacity: .4; }
+.stock-search-panel { margin-top: 14px; }
+.stock-search-results { margin-top: 7px; color: #8d98b4; font-size: .75rem; }
+.stock-search-result { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 38px; margin-top: 4px; padding: 7px 10px; color: #e2e7f5; background: #151c2e; border: 1px solid #2d3954; border-radius: 7px; text-align: left; }
+.stock-search-result:hover, .stock-search-result:focus-visible { background: #25304c; border-color: #8171ed; }
+.stock-search-result:disabled { cursor: not-allowed; opacity: .4; }
+.stock-search-result small { color: #8794b2; font-size: .7rem; }
+.real-mode .mode-description { color: #ffc2ac; }
 * { box-sizing: border-box; } body { min-width: 320px; margin: 0; background: #080b16; } button, input { font: inherit; } button { cursor: pointer; }
 .ambient { position: fixed; z-index: 0; width: 38rem; height: 38rem; border-radius: 50%; filter: blur(95px); opacity: .22; pointer-events: none; }.ambient-one { top: -19rem; right: -8rem; background: #563bdb; }.ambient-two { bottom: -23rem; left: -22rem; background: #007a80; }.app-shell { position: relative; z-index: 1; width: min(1240px, calc(100% - 40px)); margin: 0 auto; padding: 26px 0 46px; }
 .topbar, .brand, .topbar-actions, .panel-heading, .actions { display: flex; align-items: center; }.topbar { justify-content: space-between; min-height: 58px; }.brand { gap: 12px; }.brand-mark { display: grid; width: 35px; height: 35px; place-items: center; color: white; background: linear-gradient(135deg, #9069ff, #5665ef); border-radius: 11px; font-family: Georgia, serif; font-size: 1.25rem; font-style: italic; box-shadow: 0 8px 22px #5237bf66; }.brand strong { display: block; font-size: 1.03rem; letter-spacing: -.025em; }.brand span { display: block; margin-top: 2px; color: #8791ad; font-size: .74rem; }.topbar-actions { gap: 14px; }.mode-pill, .run-state, .panel-badge, .live-label { display: inline-flex; align-items: center; gap: 7px; font-size: .69rem; font-weight: 750; letter-spacing: .07em; }.mode-pill { padding: 7px 10px; color: #afbbdb; border: 1px solid #27304a; border-radius: 7px; }.mode-pill i, .live-label i { width: 6px; height: 6px; border-radius: 50%; background: #6ee7b7; box-shadow: 0 0 0 3px #6ee7b71a; }.run-state { padding: 7px 11px; color: #9da8c4; background: #141a2a; border-radius: 7px; }.run-state.running { color: #8df2c1; background: #0d2e28; }

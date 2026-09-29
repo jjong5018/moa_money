@@ -2,9 +2,31 @@
 
 Moa Money의 운영 배포는 Cloudflare Worker 한 개로 구성합니다. 정적 대시보드와 API는 Worker가 제공하고, Durable Object가 자동매매 실행 상태, 설정, 시세 이력, KIS 토큰, 일일 주문 한도를 보존합니다.
 
-운영 서비스는 모의투자 전용입니다. `TRADING_MODE`를 `paper` 이외의 값으로 바꾸면 시작 요청이 차단됩니다.
+Cloudflare 대시보드는 모의투자/실전투자 버튼으로 전환합니다. 기본값은 모의투자이며 전환만으로 자동매매가 시작되지는 않습니다. 실행 중에는 전환이 차단됩니다. 실전 시작 시 실제 주문 확인이 필요합니다.
+
+실전투자는 별도로 `KIS_REAL_APP_KEY`, `KIS_REAL_APP_SECRET`, `KIS_REAL_ACCOUNT_NO`(8자리), `KIS_REAL_ACCOUNT_PRODUCT_CD`(2자리)를 Worker Secrets에 등록해야 합니다. 모의투자 계좌를 실전에 재사용하는 기본값은 없습니다. 기존 비밀값 업로드 스크립트는 모의투자 값만 업로드합니다.
+
+인증 토큰과 일일 주문 한도 집계는 모드별로 분리됩니다. 전환 시 화면의 시세·보유 수량·전략 이력을 초기화하며 일일 한도는 유지합니다. 주문 실패 또는 상태 미확인 시 자동매매를 중지합니다. 중지 요청은 진행 중인 조회/주문 처리 후 반영되며 이미 접수된 주문을 취소하지 않습니다.
+
+주문 거래 ID는 [KIS 공식 현금 주문 예제](https://github.com/koreainvestment/open-trading-api/blob/main/examples_llm/domestic_stock/order_cash/order_cash.py)를 따릅니다. Python 로컬 대시보드는 기존 모의투자 전용입니다.
 
 ## 1. 로컬 검증
+
+### 미국주식 사용
+
+자동매매를 중지하고 **미국주식 · 달러**를 선택합니다. 감시 종목은 `NASD:AAPL, NYSE:IBM, AMEX:SPY`처럼 거래소와 티커를 함께 입력합니다. 한도는 USD이며 소수 둘째 자리까지 저장합니다. 기본값은 1회 $300, 일일 $900, 3회이며, 기존 국내 원화 설정과 별도로 저장됩니다. 시장 전환은 자동매매를 시작하지 않습니다.
+
+해외 전용 API 키를 추가하지 않고 선택한 모드의 기존 KIS 키와 계좌를 사용합니다. 계좌의 해외주식 거래 가능 여부와 USD 주문가능금액은 KIS에서 확인해야 합니다. 자동 환전은 구현하지 않으며 외화 기준 최대주문가능수량으로 제한합니다.
+
+뉴욕 시간 평일 09:30~16:00에만 조회·전략을 실행하고 주문 직전에도 시간을 확인합니다. DST는 시간대 변환으로 처리합니다. 공휴일·조기폐장 달력은 포함하지 않으며 증권사 주문 거절 시 중지합니다. 제공되는 시세는 계좌의 시세 서비스 조건에 따라 지연될 수 있습니다. 조회한 가격을 센트 단위로 반올림한 지정가 주문이며 시장가·시간외·소수점 주식·1달러 미만 종목은 지원하지 않습니다. 수수료는 설정 한도에 포함하지 않습니다.
+
+잔고와 주문내역은 연속조회가 끝나야 사용합니다. 모의 주문내역 API는 전체 조회 후 종목·매매구분을 필터링합니다. 주문 응답의 주문번호·종목·수량과 체결 수량을 대조합니다. 전량 체결되지 않거나 응답이 불확실하면 주문 확인 표시를 영구 저장하고 중지합니다. KIS에서 체결·취소를 확인한 뒤 **주문 확인 완료**를 눌러 재시작 차단을 해제합니다. 이 버튼 자체는 주문을 취소하거나 자동매매를 시작하지 않습니다. 한도는 주문 전 예약하며 거절·취소되어도 당일 복구하지 않습니다.
+
+미국 일일 한도는 뉴욕 날짜, 국내 한도는 한국 날짜로 집계합니다. 투자모드×시장별로 구분하고 전환 후에도 보존합니다. 주문 취소·정정 UI와 다른 국가 시장은 포함하지 않습니다.
+
+공식 근거: [해외 주문](https://github.com/koreainvestment/open-trading-api/blob/main/examples_llm/overseas_stock/order/order.py), [주문체결내역](https://github.com/koreainvestment/open-trading-api/blob/main/examples_llm/overseas_stock/inquire_ccnl/inquire_ccnl.py), [잔고](https://github.com/koreainvestment/open-trading-api/blob/main/examples_llm/overseas_stock/inquire_balance/inquire_balance.py), [매수가능금액](https://github.com/koreainvestment/open-trading-api/blob/main/examples_llm/overseas_stock/inquire_psamount/inquire_psamount.py). 미국 모의 매도 ID는 공식 설명의 `VTTT1001U`를 명시적으로 사용합니다(실전 ID 첫 글자를 일괄 치환하지 않음).
+
+검증은 가짜 HTTP 응답으로 수행하며 실제 계좌 주문은 보내지 않습니다. 실계좌·모의계좌의 장중 주문/체결은 별도 운영 확인이 필요합니다.
 
 Node.js 22 이상에서 의존성을 설치하고 검증합니다.
 
@@ -35,6 +57,13 @@ KIS 모의투자 값을 각각 등록합니다. 명령 실행 후 터미널이 �
 npx wrangler secret put KIS_APP_KEY
 npx wrangler secret put KIS_APP_SECRET
 npx wrangler secret put KIS_ACCOUNT_NO
+```
+
+국내 감시종목의 주식명은 KIS 실전 서버의 주식기본조회 API에서 읽습니다. 모의투자 서버에서는 이 조회가 지원되지 않으므로, 이름 표시용 앱 키를 별도 시크릿으로 등록합니다. 이 두 값만으로는 실전 자동매매 모드를 시작할 수 없습니다.
+
+```bash
+npx wrangler secret put KIS_METADATA_APP_KEY
+npx wrangler secret put KIS_METADATA_APP_SECRET
 ```
 
 로컬 `.env`에 세 값이 이미 있다면 값이 출력되지 않는 업로드 스크립트를 사용할 수 있습니다.

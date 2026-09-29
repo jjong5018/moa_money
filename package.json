@@ -5,6 +5,7 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
+    "update:stocks": "python3 scripts/update_korean_stock_catalog.py",
     "test:cloudflare": "node --experimental-strip-types --test cloudflare/test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

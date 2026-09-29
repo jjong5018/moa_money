@@ -1,3 +1,5 @@
+import { cents, usSymbol, type Market } from "./market.ts";
+
 export interface TradingSettings {
   watchlist: string[];
   order_budget: number;
@@ -43,26 +45,39 @@ function integer(value: unknown, fallback: number): number {
   return parsed;
 }
 
-export function validateSettings(input: Record<string, unknown>): TradingSettings {
-  const rawWatchlist = input.watchlist ?? DEFAULT_SETTINGS.watchlist;
+export function defaultSettings(market: Market): TradingSettings {
+  return market === "us" ? { ...DEFAULT_SETTINGS, watchlist: ["NASD:AAPL"], order_budget: 300, daily_buy_limit: 900 } : DEFAULT_SETTINGS;
+}
+
+export function validateSettings(input: Record<string, unknown>, market: Market = "kr"): TradingSettings {
+  const defaults = defaultSettings(market);
+  const rawWatchlist = input.watchlist ?? defaults.watchlist;
   const values = Array.isArray(rawWatchlist)
     ? rawWatchlist
     : String(rawWatchlist).split(",");
-  const watchlist = values.map((value) => String(value).trim()).filter(Boolean);
-  if (!watchlist.length || watchlist.some((code) => !/^\d{6}$/.test(code))) {
+  const watchlist = [...new Set(values.map((value) => String(value).trim().toUpperCase()).filter(Boolean))];
+  if (market === "us") watchlist.forEach(usSymbol);
+  if (!watchlist.length || (market === "kr" && watchlist.some((code) => !/^\d{6}$/.test(code)))) {
     throw new Error("감시 종목은 6자리 종목코드로 입력해야 합니다.");
   }
 
+  if (watchlist.length > 10) throw new Error("감시 종목은 최대 10개입니다.");
+  const amount = (value: unknown, fallback: number) => {
+    if (market === "kr") return integer(value, fallback);
+    const number = value === undefined || value === "" ? fallback : Number(value);
+    if (Math.abs(cents(number) / 100 - number) > 1e-8) throw new Error("달러 금액은 소수 둘째 자리까지 입력해주세요.");
+    return number;
+  };
   const settings: TradingSettings = {
     watchlist,
-    order_budget: integer(input.order_budget, DEFAULT_SETTINGS.order_budget),
-    daily_buy_limit: integer(input.daily_buy_limit, DEFAULT_SETTINGS.daily_buy_limit),
+    order_budget: amount(input.order_budget, defaults.order_budget),
+    daily_buy_limit: amount(input.daily_buy_limit, defaults.daily_buy_limit),
     daily_order_limit: integer(input.daily_order_limit, DEFAULT_SETTINGS.daily_order_limit),
     short_window: integer(input.short_window, DEFAULT_SETTINGS.short_window),
     long_window: integer(input.long_window, DEFAULT_SETTINGS.long_window),
     poll_interval_seconds: integer(input.poll_interval_seconds, DEFAULT_SETTINGS.poll_interval_seconds),
   };
-  if (settings.order_budget < 1_000) throw new Error("1회 매수 한도는 1,000원 이상이어야 합니다.");
+  if (settings.order_budget < (market === "us" ? 1 : 1_000)) throw new Error(market === "us" ? "1회 매수 한도는 1달러 이상이어야 합니다." : "1회 매수 한도는 1,000원 이상이어야 합니다.");
   if (settings.daily_buy_limit < settings.order_budget) {
     throw new Error("일일 최대 매수 금액은 1회 매수 한도 이상이어야 합니다.");
   }
@@ -111,7 +126,14 @@ export function reserveOrder(
   side: "buy" | "sell",
   amount: number,
   settings: TradingSettings,
+  market: Market = "kr",
 ): DailyUsage {
+  if (market === "us") {
+    if (usage.order_count >= settings.daily_order_limit) throw new Error(`일일 주문 횟수 한도(${settings.daily_order_limit}회)에 도달했습니다.`);
+    if (side === "buy" && cents(usage.buy_amount) + cents(amount) > cents(settings.daily_buy_limit)) throw new Error(`일일 매수 한도($${settings.daily_buy_limit.toFixed(2)})를 초과합니다.`);
+    const reserved = reserveOrder({ ...usage, buy_amount: cents(usage.buy_amount) }, side, cents(amount), { ...settings, daily_buy_limit: cents(settings.daily_buy_limit) });
+    return { ...reserved, buy_amount: reserved.buy_amount / 100 };
+  }
   if (amount < 1) throw new Error("주문 금액은 1원 이상이어야 합니다.");
   if (usage.order_count >= settings.daily_order_limit) {
     throw new Error(`일일 주문 횟수 한도(${settings.daily_order_limit}회)에 도달했습니다.`);

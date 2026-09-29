@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Moa Money · Paper Trading</title>
-  <link rel="stylesheet" href="/static/dashboard.css">
+  <title>Moa Money · 국내·미국주식</title>
+  <link rel="stylesheet" href="/static/dashboard.css?v=stock-search1">
 </head>
 <body>
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -25,8 +25,21 @@
     </section>
     <section class="workspace">
       <form id="settingsForm" class="panel settings-panel">
-        <div class="panel-heading"><div><p class="eyebrow">CONFIGURATION</p><h2>자동매매 설정</h2></div><span class="panel-badge">안전 모드</span></div>
-        <div class="field-group"><label for="watchlist">감시 종목 <span>6자리 코드, 쉼표로 구분</span></label><input id="watchlist" name="watchlist" inputmode="numeric" placeholder="005930"></div>
+        <div class="panel-heading"><div><p class="eyebrow">CONFIGURATION</p><h2>자동매매 설정</h2></div><span id="modeBadge" class="panel-badge">모의투자</span></div>
+        <div class="mode-selector" role="group" aria-label="투자 모드">
+          <button type="button" class="button" data-mode="paper" aria-pressed="true">모의투자</button>
+          <button type="button" class="button" data-mode="real" aria-pressed="false">실전투자</button>
+        </div>
+        <p id="modeDescription" class="mode-description" role="status">모의 계좌로 거래합니다.</p>
+        <div class="mode-selector" role="group" aria-label="거래 시장">
+          <button type="button" class="button" data-market="kr" aria-pressed="true">국내주식 · 원</button>
+          <button type="button" class="button" data-market="us" aria-pressed="false">미국주식 · 달러</button>
+        </div>
+        <p id="marketDescription" class="mode-description" role="status">국내주식 시장가 주문</p>
+        <p id="pendingOrderDescription" class="error" role="status" hidden></p>
+        <button id="acknowledgeOrder" type="button" class="button ghost" hidden>주문 확인 완료</button>
+        <div class="field-group"><label for="watchlist">감시 종목 <span>6자리 코드, 쉼표로 구분</span></label><input id="watchlist" name="watchlist" inputmode="numeric" placeholder="005930"><div id="watchlistNames" class="watchlist-names" aria-live="polite"></div></div>
+        <div id="stockSearchPanel" class="field-group stock-search-panel"><label for="stockSearch">국내 종목 검색 <span>이름 또는 코드</span></label><input id="stockSearch" type="search" autocomplete="off" placeholder="예: 삼성전자 또는 005930"><div id="stockSearchResults" class="stock-search-results" aria-live="polite"></div></div>
         <div class="field-grid"><div class="field-group"><label for="orderBudget">1회 매수 한도 <span>원</span></label><input id="orderBudget" name="order_budget" type="number" min="1000" step="1000"></div><div class="field-group"><label for="dailyBuyLimit">일일 최대 매수 <span>원</span></label><input id="dailyBuyLimit" name="daily_buy_limit" type="number" min="1000" step="1000"></div></div>
         <div class="field-group"><label for="dailyOrderLimit">일일 최대 주문 횟수 <span>매수·매도 합산</span></label><input id="dailyOrderLimit" name="daily_order_limit" type="number" min="1" step="1"></div>
         <div class="section-divider"><span>전략</span></div>
@@ -41,6 +54,6 @@
       </section>
     </section>
   </main>
-  <script src="/static/dashboard.js"></script>
+  <script type="module" src="/static/dashboard.js?v=stock-search1"></script>
 </body>
 </html>
